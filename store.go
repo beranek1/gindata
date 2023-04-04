@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/beranek1/godatainterface"
+	"github.com/beranek1/godata"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,10 +17,10 @@ type DataStoreGetResponse struct {
 }
 
 type DataStoreBackend struct {
-	store godatainterface.DataStoreVersionedRangeFromInterval
+	store godata.DataStoreInterface
 }
 
-func CreateDataStoreBackend(store godatainterface.DataStoreVersionedRangeFromInterval) *DataStoreBackend {
+func CreateDataStoreBackend(store godata.DataStoreInterface) *DataStoreBackend {
 	return &DataStoreBackend{store: store}
 }
 

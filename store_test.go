@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/beranek1/godata"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -78,6 +79,38 @@ func (m *dataStoreMock) FromInterval(key string, start int64, interval int64) (m
 	m.Last_call = "FromInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(interval)
 	if m.success {
 		return m.Return_map, nil
+	}
+	return nil, errors.New("so sorry")
+}
+
+func (m *dataStoreMock) RangeArray(key string, start int64, end int64) ([]godata.DataVersionArrayEntry, error) {
+	m.Last_call = "Range " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(end)
+	if m.success {
+		return []godata.DataVersionArrayEntry{}, nil
+	}
+	return nil, errors.New("so sorry")
+}
+
+func (m *dataStoreMock) FromArray(key string, start int64) ([]godata.DataVersionArrayEntry, error) {
+	m.Last_call = "From " + key + " " + fmt.Sprint(start)
+	if m.success {
+		return []godata.DataVersionArrayEntry{}, nil
+	}
+	return nil, errors.New("so sorry")
+}
+
+func (m *dataStoreMock) RangeIntervalArray(key string, start int64, end int64, interval int64) ([]godata.DataVersionArrayEntry, error) {
+	m.Last_call = "RangeInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(end) + " " + fmt.Sprint(interval)
+	if m.success {
+		return []godata.DataVersionArrayEntry{}, nil
+	}
+	return nil, errors.New("so sorry")
+}
+
+func (m *dataStoreMock) FromIntervalArray(key string, start int64, interval int64) ([]godata.DataVersionArrayEntry, error) {
+	m.Last_call = "FromInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(interval)
+	if m.success {
+		return []godata.DataVersionArrayEntry{}, nil
 	}
 	return nil, errors.New("so sorry")
 }
