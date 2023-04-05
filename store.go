@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/beranek1/godata"
+	"github.com/beranek1/godatainterface"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,10 +17,10 @@ type DataStoreGetResponse struct {
 }
 
 type DataStoreBackend struct {
-	store godata.DataStoreInterface
+	store godatainterface.DataStoreVersionedRangeFromInterval
 }
 
-func CreateDataStoreBackend(store godata.DataStoreInterface) *DataStoreBackend {
+func CreateDataStoreBackend(store godatainterface.DataStoreVersionedRangeFromInterval) *DataStoreBackend {
 	return &DataStoreBackend{store: store}
 }
 
@@ -80,7 +80,7 @@ func (b *DataStoreBackend) Range(c *gin.Context) {
 		returnAsJsonResponse(c, DataStoreErrorResponse{err.Error()}, 404)
 		return
 	}
-	returnAsJsonResponse(c, DataStoreGetResponse{values}, 200)
+	returnAsJsonResponse(c, DataStoreGetResponse{values.Array()}, 200)
 }
 
 func (b *DataStoreBackend) From(c *gin.Context) {
@@ -95,7 +95,7 @@ func (b *DataStoreBackend) From(c *gin.Context) {
 		returnAsJsonResponse(c, DataStoreErrorResponse{err.Error()}, 404)
 		return
 	}
-	returnAsJsonResponse(c, DataStoreGetResponse{values}, 200)
+	returnAsJsonResponse(c, DataStoreGetResponse{values.Array()}, 200)
 }
 
 func (b *DataStoreBackend) RangeInterval(c *gin.Context) {
@@ -120,7 +120,7 @@ func (b *DataStoreBackend) RangeInterval(c *gin.Context) {
 		returnAsJsonResponse(c, DataStoreErrorResponse{err.Error()}, 404)
 		return
 	}
-	returnAsJsonResponse(c, DataStoreGetResponse{values}, 200)
+	returnAsJsonResponse(c, DataStoreGetResponse{values.Array()}, 200)
 }
 
 func (b *DataStoreBackend) FromInterval(c *gin.Context) {
@@ -140,7 +140,7 @@ func (b *DataStoreBackend) FromInterval(c *gin.Context) {
 		returnAsJsonResponse(c, DataStoreErrorResponse{err.Error()}, 404)
 		return
 	}
-	returnAsJsonResponse(c, DataStoreGetResponse{values}, 200)
+	returnAsJsonResponse(c, DataStoreGetResponse{values.Array()}, 200)
 }
 
 func (b *DataStoreBackend) AttachToRouter(path string, r *gin.Engine) {

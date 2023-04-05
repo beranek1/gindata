@@ -17,7 +17,7 @@ require (
 
 require (
 	github.com/beranek1/godata v0.0.0-20230404195330-7b0f993d4b63
-	github.com/beranek1/godatainterface v0.0.0-20230404191308-587b5cb8a0f1
+	github.com/beranek1/godatainterface v0.0.0-20230405092110-fa0ae45c5e98
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect

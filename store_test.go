@@ -7,16 +7,29 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/beranek1/godata"
+	"github.com/beranek1/godatainterface"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
 type dataStoreMock struct {
-	success      bool
-	Last_call    string
-	Return_value any
-	Return_map   map[int64]any
+	success        bool
+	Last_call      string
+	Return_value   any
+	Return_version *dataVersionMock
+}
+
+type dataVersionMock struct {
+	Return_array godatainterface.DataVersionLinkedArray
+	Return_map   godatainterface.DataVersionLinkedMap
+}
+
+func (m *dataVersionMock) Array() godatainterface.DataVersionLinkedArray {
+	return m.Return_array
+}
+
+func (m *dataVersionMock) Map() godatainterface.DataVersionLinkedMap {
+	return m.Return_map
 }
 
 func (m *dataStoreMock) Get(key string) (any, error) {
@@ -51,66 +64,34 @@ func (m *dataStoreMock) PutAt(key string, value any, timestamp int64) error {
 	return errors.New("so sorry")
 }
 
-func (m *dataStoreMock) Range(key string, start int64, end int64) (map[int64]any, error) {
+func (m *dataStoreMock) Range(key string, start int64, end int64) (godatainterface.DataVersionLinked, error) {
 	m.Last_call = "Range " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(end)
 	if m.success {
-		return m.Return_map, nil
+		return m.Return_version, nil
 	}
 	return nil, errors.New("so sorry")
 }
 
-func (m *dataStoreMock) From(key string, start int64) (map[int64]any, error) {
+func (m *dataStoreMock) From(key string, start int64) (godatainterface.DataVersionLinked, error) {
 	m.Last_call = "From " + key + " " + fmt.Sprint(start)
 	if m.success {
-		return m.Return_map, nil
+		return m.Return_version, nil
 	}
 	return nil, errors.New("so sorry")
 }
 
-func (m *dataStoreMock) RangeInterval(key string, start int64, end int64, interval int64) (map[int64]any, error) {
+func (m *dataStoreMock) RangeInterval(key string, start int64, end int64, interval int64) (godatainterface.DataVersionLinked, error) {
 	m.Last_call = "RangeInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(end) + " " + fmt.Sprint(interval)
 	if m.success {
-		return m.Return_map, nil
+		return m.Return_version, nil
 	}
 	return nil, errors.New("so sorry")
 }
 
-func (m *dataStoreMock) FromInterval(key string, start int64, interval int64) (map[int64]any, error) {
+func (m *dataStoreMock) FromInterval(key string, start int64, interval int64) (godatainterface.DataVersionLinked, error) {
 	m.Last_call = "FromInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(interval)
 	if m.success {
-		return m.Return_map, nil
-	}
-	return nil, errors.New("so sorry")
-}
-
-func (m *dataStoreMock) RangeArray(key string, start int64, end int64) ([]godata.DataVersionArrayEntry, error) {
-	m.Last_call = "Range " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(end)
-	if m.success {
-		return []godata.DataVersionArrayEntry{}, nil
-	}
-	return nil, errors.New("so sorry")
-}
-
-func (m *dataStoreMock) FromArray(key string, start int64) ([]godata.DataVersionArrayEntry, error) {
-	m.Last_call = "From " + key + " " + fmt.Sprint(start)
-	if m.success {
-		return []godata.DataVersionArrayEntry{}, nil
-	}
-	return nil, errors.New("so sorry")
-}
-
-func (m *dataStoreMock) RangeIntervalArray(key string, start int64, end int64, interval int64) ([]godata.DataVersionArrayEntry, error) {
-	m.Last_call = "RangeInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(end) + " " + fmt.Sprint(interval)
-	if m.success {
-		return []godata.DataVersionArrayEntry{}, nil
-	}
-	return nil, errors.New("so sorry")
-}
-
-func (m *dataStoreMock) FromIntervalArray(key string, start int64, interval int64) ([]godata.DataVersionArrayEntry, error) {
-	m.Last_call = "FromInterval " + key + " " + fmt.Sprint(start) + " " + fmt.Sprint(interval)
-	if m.success {
-		return []godata.DataVersionArrayEntry{}, nil
+		return m.Return_version, nil
 	}
 	return nil, errors.New("so sorry")
 }
@@ -119,7 +100,8 @@ func createTestBackendRouterSuccess() (*gin.Engine, *dataStoreMock) {
 	rv := "value"
 	rm := map[int64]any{}
 	rm[123] = rv
-	m := &dataStoreMock{true, "", rv, rm}
+	ra := godatainterface.DataVersionLinkedArray{godatainterface.DataVersionEntry{Data: rv, Timestamp: 123}}
+	m := &dataStoreMock{true, "", rv, &dataVersionMock{ra, rm}}
 	b := CreateDataStoreBackend(m)
 	return b.SetupRouter(), m
 }
@@ -173,9 +155,10 @@ func TestGetAt(t *testing.T) {
 }
 
 func TestRange(t *testing.T) {
-	testPath(t, "GET", "/test/range/456", 200, "{\"Data\":{\"123\":\"value\"}}", "From test 456")
-	testPath(t, "GET", "/test/range/456/789", 200, "{\"Data\":{\"123\":\"value\"}}", "Range test 456 789")
-	testPath(t, "GET", "/test/range/456/789/10", 200, "{\"Data\":{\"123\":\"value\"}}", "RangeInterval test 456 789 10")
+	jstr := "{\"Data\":[{\"d\":\"value\",\"t\":123}]}"
+	testPath(t, "GET", "/test/range/456", 200, jstr, "From test 456")
+	testPath(t, "GET", "/test/range/456/789", 200, jstr, "Range test 456 789")
+	testPath(t, "GET", "/test/range/456/789/10", 200, jstr, "RangeInterval test 456 789 10")
 	testIllegalPath(t, "GET", "/test/range/abc", 400, "{\"Error\":\"strconv.ParseInt: parsing \\\"abc\\\": invalid syntax\"}")
 	testIllegalPath(t, "GET", "/test/range/abc/789", 400, "{\"Error\":\"strconv.ParseInt: parsing \\\"abc\\\": invalid syntax\"}")
 	testIllegalPath(t, "GET", "/test/range/456/def", 400, "{\"Error\":\"strconv.ParseInt: parsing \\\"def\\\": invalid syntax\"}")
@@ -185,8 +168,9 @@ func TestRange(t *testing.T) {
 }
 
 func TestFrom(t *testing.T) {
-	testPath(t, "GET", "/test/from/456", 200, "{\"Data\":{\"123\":\"value\"}}", "From test 456")
-	testPath(t, "GET", "/test/from/456/10", 200, "{\"Data\":{\"123\":\"value\"}}", "FromInterval test 456 10")
+	jstr := "{\"Data\":[{\"d\":\"value\",\"t\":123}]}"
+	testPath(t, "GET", "/test/from/456", 200, jstr, "From test 456")
+	testPath(t, "GET", "/test/from/456/10", 200, jstr, "FromInterval test 456 10")
 	testIllegalPath(t, "GET", "/test/from/abc", 400, "{\"Error\":\"strconv.ParseInt: parsing \\\"abc\\\": invalid syntax\"}")
 	testIllegalPath(t, "GET", "/test/from/abc/789", 400, "{\"Error\":\"strconv.ParseInt: parsing \\\"abc\\\": invalid syntax\"}")
 	testIllegalPath(t, "GET", "/test/from/456/def", 400, "{\"Error\":\"strconv.ParseInt: parsing \\\"def\\\": invalid syntax\"}")
